@@ -1,4 +1,5 @@
 from jira import JIRA
+import io
 import re
 import util
 import logging
@@ -55,8 +56,8 @@ class Jira:
     def auth(self):
         return self.user, self.token
 
-    def getProject(self, projectkey, endstate, reopenstate, labels):
-        return JiraProject(self, projectkey, endstate, reopenstate, labels)
+    def getProject(self, projectkey, endstate, reopenstate, labels, endstate_status=None):
+        return JiraProject(self, projectkey, endstate, reopenstate, labels, endstate_status)
 
     def list_hooks(self):
         resp = requests.get(
@@ -101,13 +102,17 @@ class Jira:
 
 
 class JiraProject:
-    def __init__(self, jira, projectkey, endstate, reopenstate, labels):
+    def __init__(self, jira, projectkey, endstate, reopenstate, labels, endstate_status=None):
         self.jira = jira
         self.labels = labels.split(",") if labels else []
         self.projectkey = projectkey
         self.j = self.jira.j
         self.endstate = endstate
         self.reopenstate = reopenstate
+        # endstate_status is the Jira *status name* that results from the endstate transition
+        # (e.g. "Closed"), which is distinct from the transition name (e.g. "Close Issue").
+        # Defaults to endstate for backward compatibility.
+        self.endstate_status = endstate_status if endstate_status else endstate
 
     def get_state_issue(self, issue_key="-"):
         if issue_key != "-":
@@ -161,8 +166,10 @@ class JiraProject:
                 self.j.delete_attachment(a.id)
 
         # attach the new state file
-        self.jira.attach_file(
-            i.key, repo_id_to_fname(repo_id), util.state_to_json(state)
+        self.j.add_attachment(
+            issue=i.key,
+            attachment=io.BytesIO(util.state_to_json(state).encode()),
+            filename=repo_id_to_fname(repo_id),
         )
 
     def create_issue(
@@ -236,6 +243,7 @@ class JiraIssue:
         self.rawissue = rawissue
         self.j = self.project.j
         self.endstate = self.project.endstate
+        self.endstate_status = self.project.endstate_status
         self.reopenstate = self.project.reopenstate
         self.labels = self.project.labels
 
@@ -267,7 +275,7 @@ class JiraIssue:
             self.transition(self.endstate)
 
     def parse_state(self, raw_state):
-        return raw_state != self.endstate
+        return raw_state != self.endstate_status
 
     def transition(self, transition):
         if (

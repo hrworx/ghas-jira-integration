@@ -87,6 +87,7 @@ def sync(args):
         args.issue_end_state,
         args.issue_reopen_state,
         args.jira_labels,
+        args.issue_end_status,
     )
     repo_id = args.gh_org + "/" + args.gh_repo
 
@@ -227,6 +228,12 @@ def main():
         "--issue-reopen-state",
         help="Custom reopen state (e.g. In Progress) To Do by default",
         default="To Do",
+    )
+    issue_state_base.add_argument(
+        "--issue-end-status",
+        help="Jira status name that results from the end-state transition (e.g. 'Closed'). "
+             "Defaults to the value of --issue-end-state if not set.",
+        default=None,
     )
 
     parser = argparse.ArgumentParser(prog="gh2jira")

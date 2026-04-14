@@ -28,9 +28,13 @@ inputs:
     required: false
     default: 'both'
   issue_end_state:
-    description: 'Custom end state'
+    description: 'Name of the Jira transition to close an issue (e.g. "Close Issue")'
     required: false
     default: 'Done'
+  issue_end_status:
+    description: 'Jira status name that results from the end-state transition (e.g. "Closed"). Defaults to issue_end_state if not set.'
+    required: false
+    default: ''
   issue_reopen_state:
     description: 'Custom reopen state'
     required: false
@@ -50,6 +54,7 @@ runs:
       INPUTS_JIRA_LABELS: ${{ inputs.jira_labels }}
       INPUTS_SYNC_DIRECTION: ${{ inputs.sync_direction }}
       INPUTS_ISSUE_END_STATE: ${{ inputs.issue_end_state }}
+      INPUTS_ISSUE_END_STATUS: ${{ inputs.issue_end_status }}
       INPUTS_ISSUE_REOPEN_STATE: ${{ inputs.issue_reopen_state }}
     run: |
       pip3 install pipenv
@@ -68,4 +73,5 @@ runs:
         --jira-labels "$INPUTS_JIRA_LABELS" \
         --direction "$INPUTS_SYNC_DIRECTION" \
         --issue-end-state "$INPUTS_ISSUE_END_STATE" \
+        ${INPUTS_ISSUE_END_STATUS:+--issue-end-status "$INPUTS_ISSUE_END_STATUS"} \
         --issue-reopen-state "$INPUTS_ISSUE_REOPEN_STATE"
