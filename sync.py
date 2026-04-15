@@ -45,10 +45,10 @@ class Sync:
 
     def sync(self, alert, issues, in_direction):
         if alert is None:
-            # there is no alert, so we have to remove all issues
+            # there is no alert, so close all issues
             # that have ever been associated with it
             for i in issues:
-                i.delete()
+                i.adjust_state(False)
             return None
 
         # make sure that each alert has at least
@@ -72,7 +72,7 @@ class Sync:
         if len(issues) > 1:
             issues.sort(key=lambda i: i.id())
             for i in issues[1:]:
-                i.delete()
+                i.adjust_state(False)
 
         issue = issues[0]
 
